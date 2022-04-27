@@ -1,4 +1,8 @@
 <h1>Home</h1>
+{{#if userInfo}}
+<p>Bienvenido {{userInfo}}!!</p>
+<button><a href="/logOut">Log out</a></button>
+{{/if}}
 <a href="/login">Go to Log In ➡</a>
 <br>
 <a href="/signup">Go tu Sign Up ➡</a>

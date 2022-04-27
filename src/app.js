@@ -15,6 +15,9 @@ import {
 import {
     fileURLToPath
 } from 'url';
+import {
+    isatty
+} from 'tty';
 
 const __dirname = dirname(fileURLToPath(
     import.meta.url));
@@ -120,6 +123,14 @@ const createHash = (password) => {
     return bcrypt.hashSync(password, bcrypt.genSaltSync(10))
 }
 
+// Authentication
+const isAuth = (req, res, next) => {
+    if (req.session.isAuth) {
+        next();
+    } else {
+        res.redirect('/missingpermission');
+    }
+}
 
 // ROUTES
 app.get('/', (req, res) => {
@@ -133,8 +144,11 @@ app.get('/login', (req, res) => {
 app.get('/signup', (req, res) => {
     res.render('signup');
 });
+app.get('/missingpermission', (req, res) => {
+    res.render('missingpermission');
+});
 
-app.get('/perfil', (req, res) => {
+app.get('/perfil', isAuth, (req, res) => {
     res.render('perfil');
 });
 
@@ -147,9 +161,10 @@ app.post('/signupForm', passport.authenticate('signup', {
 app.post('/loginForm', passport.authenticate('login', {
     failureRedirect: '/login'
 }), async (req, res) => {
-    console.log(req.body)
-    res.redirect('/', {
-        userInfo: req.body
+    req.session.isAuth = true
+    req.session.user = req.body
+    res.render('home', {
+        userInfo: req.body.username
     })
 })
 
@@ -164,4 +179,5 @@ app.post('/logOut', (req, res) => {
             res.redirect('/')
         }
     })
+    res.redirect('/signup')
 })
