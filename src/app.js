@@ -55,6 +55,8 @@ app.use(session({
     saveUninitialized: true,
 }))
 
+
+
 // Settings passport
 app.use(passport.initialize());
 app.use(passport.session());
@@ -72,16 +74,14 @@ passport.deserializeUser((id, done) => {
 })
 
 // Setting passport Strategy
-passport.use('regist', new LocalStrategy({
+passport.use('signup', new LocalStrategy({
     passReqToCallback: true
 }, (req, username, password, done) => {
     User.findOne({
         username: username
     }, (err, user) => {
         if (err) return done(err);
-        if (user) return done(null, false, {
-            message: 'user already exists'
-        });
+        if (user) res.redirect('/');
         const newUser = {
             name: req.body.name,
             username: username,
@@ -91,6 +91,27 @@ passport.use('regist', new LocalStrategy({
             if (err) return done(err);
             return done(null, userCreated)
         })
+    })
+}))
+
+passport.use('login', new LocalStrategy({
+    passReqToCallback: true
+}, (req, username, password, done) => {
+    User.findOne({
+        username: username
+    }, (err, user) => {
+        if (err) return done(err);
+        if (user) {
+            if (!bcrypt.compareSync(password, user.password)) {
+                console.log('wrong password')
+            } else {
+                return done(null, user)
+            }
+        } else {
+            return done(null, {
+                message: "no email found"
+            })
+        }
     })
 }))
 
@@ -113,14 +134,34 @@ app.get('/signup', (req, res) => {
     res.render('signup');
 });
 
-app.get('/mierda', (req, res) => {
-    res.render('mierda');
+app.get('/perfil', (req, res) => {
+    res.render('perfil');
 });
 
-app.post('/signupForm', passport.authenticate('regist', {
+app.post('/signupForm', passport.authenticate('signup', {
     failureRedirect: '/signup'
 }), (req, res) => {
-    // res.redirect('/')
+    res.redirect('/perfil')
+})
+
+app.post('/loginForm', passport.authenticate('login', {
+    failureRedirect: '/login'
+}), async (req, res) => {
     console.log(req.body)
-    res.send(`<h1>${req.body.username}</h1>`)
+    res.redirect('/', {
+        userInfo: req.body
+    })
+})
+
+
+app.post('/logOut', (req, res) => {
+    req.session.destroy((err) => {
+        if (err) {
+            return res.send({
+                error: error
+            })
+        } else {
+            res.redirect('/')
+        }
+    })
 })
